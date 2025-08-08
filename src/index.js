@@ -3,9 +3,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const input = document.querySelector('input[type="text"]');
   const poemContainer = document.getElementById("poem-output");
 
+  const API_KEY = "ctec04f17ee45ebe9b5ffoa34af106fa";
+
+  // Typewriter effect
   function typePoem(poem) {
     poemContainer.textContent = "";
-    poemContainer.classList.remove("typewriter");
     let index = 0;
 
     const interval = setInterval(() => {
@@ -15,25 +17,41 @@ document.addEventListener("DOMContentLoaded", function () {
       if (index >= poem.length) {
         clearInterval(interval);
       }
-    }, 40);
+    }, 40); // adjust speed if needed
   }
 
-  function generatePoem(prompt) {
-    //Replace this with real API call later!
-    const poems = {
-      amour: `Dans le silence doux de l’amour\nUn souffle chaud, un rêve court\nTon regard brille, éclat d’étoile\nMon cœur chavire, sans boussole.`,
-      nuit: `Sous le voile noir de la nuit\nChantent les ombres, s'enfuit l'ennui\nLa lune danse entre les branches\nEt l’âme se perd, douce revanche.`,
-      fleur: `Petite fleur au matin clair\nTon parfum flotte dans les airs\nChaque pétale est un secret\nUn doux mystère à jamais discret.`,
-    };
+  // Fetch poem from SheCodes AI API
+  async function fetchPoem(prompt) {
+    const apiUrl = `https://api.shecodes.io/ai/v1/generate?prompt=${encodeURIComponent(
+      prompt
+    )}&context=${encodeURIComponent(
+      "Please write a short original poem in French based on the prompt."
+    )}&key=${API_KEY}`;
 
-    const lowerPrompt = prompt.toLowerCase();
+    poemContainer.textContent = "✨ Génération du poème... ✨";
 
-    return (
-      poems[lowerPrompt] ||
-      `Voici un poème sur "${prompt}"...\n\nSous les mots naît un doux frisson\nInspiration et passion fusionnent\nL’IA rêve et t’offre ces vers\nNés d’un souffle imaginaire.`
-    );
+    try {
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        throw new Error("API request failed");
+      }
+
+      const data = await response.json();
+
+      if (data && data.answer) {
+        typePoem(data.answer);
+      } else {
+        poemContainer.textContent = "❌ No poem returned from the AI.";
+      }
+    } catch (error) {
+      console.error("Error fetching poem:", error);
+      poemContainer.textContent =
+        "⚠️ Une erreur est survenue. Veuillez réessayer.";
+    }
   }
 
+  // Handle form submission
   form.addEventListener("submit", function (event) {
     event.preventDefault();
 
@@ -41,13 +59,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (prompt === "") return;
 
-    // Simulate loading
-    poemContainer.textContent = "✨ Génération du poème... ✨";
-    poemContainer.classList.remove("typewriter");
-
-    setTimeout(() => {
-      const poem = generatePoem(prompt);
-      typePoem(poem);
-    }, 1000);
+    fetchPoem(prompt);
   });
 });
